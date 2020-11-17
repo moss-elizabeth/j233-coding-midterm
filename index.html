@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Journlists Arrested by Law Enforcement 2016-2020</title>
+</head>
+<body>
+
+<svg width="1200" height="800"></svg>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script>
+var data = [
+  ["Albany","NY",1,42.65,-73.75],
+  ["Annandale","VA",1,38.83,-77.19],
+  ["Asbury Park","NJ",1,40.22,-74.01],
+  ["Atlanta","GA",2,33.25,-84.41],
+  ["Bentonville","AR",1,36.22,-94.12],
+  ["Birmingham","AL",3,33.31,-86.48],
+  ["Bridgeport","CT",1,41.1,-73.11],
+  ["Bronx","NY",1,40.85,-73.87],
+  ["Buffalo","NY",1,42.88,-78.87],
+  ["Camden","DE",1,39.11,-75.55],
+  ["Charleston","SC",1,32.77,-79.92],
+  ["Chicago","IL",1,41.87,-87.63],
+  ["Cincinnati","OH",1,39.1,-84.51],
+  ["Columbia","SC",2,34.03,-80.9],
+  ["Dallas","TX",2,32.79,-96.76],
+  ["Denver","CO",1,39.76,-104.87],
+  ["Des Moines","IA",1,41.57,-93.61],
+  ["Detroit","MI",2,42.38,-83.1],
+  ["Douglas County","MN",1,45.93,-95.41],
+  ["Graham","NC",1,36.05,-79.38],
+  ["Harrisburg","PA",1,40.27,-76.88],
+  ["Hemet","CA",1,33.73,-116.99],
+  ["Houston","TX",1,55.86,-4.55],
+  ["Jefferson City","MO",1,38.57,-92.17],
+  ["Kalamazoo","MI",1,42.27,-85.58],
+  ["Laredo","TX",1,27.56,-99.48],
+  ["Las Vegas","NV",3,35.6,-105.22],
+  ["Lincoln","NE",1,40.8,-96.67],
+  ["Little Rock","AK",3,34.72,-92.35],
+  ["Los Angeles","CA",11,34.11,-118.4],
+  ["Louisville","KY",2,38.16,-85.64],
+  ["Medford","OR",1,42.33,-122.85],
+  ["Memphis","TN",1,35.1,-89.97],
+  ["Miami","FL",1,25.78,-80.21],
+  ["Milwaukee","WI",1,43.06,-87.96],
+  ["Minneapolis","MN",18,44.96,-93.26],
+  ["Morton County","ND",8,45.74,-101.19],
+  ["Naperville","IL",1,41.74,-88.16],
+  ["New York","NY",7,40.71,-74.01],
+  ["Oakland","CA",1,37.79,-122.21],
+  ["Omaha","NE",5,41.26,-96.05],
+  ["Philadelphia","PA",5,40,-75.13],
+  ["Portland","OR",3,45.53,-122.65],
+  ["Sacramento","CA",3,38.56,-121.46],
+  ["San Francisco","CA",4,37.65,-122.41],
+  ["San Jose","CA",2,37.3,-121.84],
+  ["Seattle","WA",2,47.62,-122.32],
+  ["St. Louis","MO",11,38.63,-90.24],
+  ["St. Martin Parish","LA",2,30.25,-91.72],
+  ["St. Petersburg","FL",1,27.79,-82.66],
+  ["Tampa","FL",1,27.99,-82.44],
+  ["Washington","DC",10,38.9,-77.03],
+  ["Worcester","MA",1,42.27,-71.8]
+]
+;
+
+
+var scale = d3.scalePow()
+	.domain([d3.max(data.map(function(d){return d[2]; })), d3.min(data.map(function(d){ return d[2]}))])
+	.range([35, 10]);
+    
+var color = d3.scaleLinear()
+    .domain([d3.max(data.map(function(d){return d[2]; })), d3.min(data.map(function(d){ return d[2]}))])
+    .range(["rgba(70, 130, 180, 0.6)", "rgba(70, 130, 180, 0.1)"])
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+    
+var tooltip = d3.select(".tooltip");
+
+d3.json("us.json").then(function(us) {
+
+  var conus = topojson.feature(us, {
+    type: "GeometryCollection",
+    geometries: us.objects.states.geometries.filter(function(d) {
+      return d.id !== 2 // AK
+        && d.id !== 15 // HI
+        && d.id < 60; // outlying areas
+    })
+  });
+
+  var projection = d3.geoAlbers()
+      .fitSize([width, height], conus);
+
+  var path = d3.geoPath()
+      .projection(projection);
+
+  svg.append("path")
+      .datum(conus)
+      .attr("d", path)
+      .attr("fill", "#eee")
+
+
+  svg.selectAll(".states")
+  	.data(conus.features)
+  	.enter()
+  	.append("path")
+  	.attr("d", path)
+  	.style("stroke", "#aaa")
+  	.style("stroke-width", ".5px")
+  	.style("fill", "none");
+    
+  svg.selectAll(".bubble")
+  	.data(data)
+  	.enter()
+  	.append("circle")
+  	.attr("cx", function(d){ return projection([d[4], d[3]])[0]; })
+  	.attr("cy", function(d){ return projection([d[4], d[3]])[1]; })
+  	.attr("r", function(d){ return scale(d[2]); })
+  	.style("fill", "#2E4053")
+    .style("stroke", "#17202A")
+    .style("stroke-width", ".5px")
+    .style("fill-opacity", ".50")
+  .on("mouseover", function(d) {
+       
+      console.log(d)
+      
+      
+      tooltip
+                .attr("opacity", 1)
+                .attr("transform", "translate(" + d3.select(this).attr("cx") + "," + d3.select(this).attr("cy") + ")");
+
+      tooltipFirstLine.text("City: " + d[0] + ", " + d[1] + ". ")
+      tooltipSecondLine.text("Arrests: " + d[2])
+      
+  })
+  
+  
+    .on("mouseout", function(d){
+        tooltip.attr("opacity", 0);
+          })
+ 
+
+    var tooltip = svg.append("g")
+        .attr("transform", "translate(0, 0)")
+        .attr("opacity", 0);
+    
+    tooltip.append("rect")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", 150)
+          .attr("height", 50)
+          .attr("fill", "white")
+          .attr("stroke", "black")
+          .attr("stroke-width", 0.5)
+          .attr("opacity", .75)
+          .style("pointer-events", "none")
+         
+    
+    var tooltipText = tooltip.append("text")
+        .attr("x", 0)
+        .attr("y", 20)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 12)
+    
+    
+    var tooltipFirstLine = tooltipText.append("tspan")
+        .attr("x", 10)
+        .attr("y", 25)
+    
+    var tooltipSecondLine = tooltipText.append("tspan")
+        .attr("x", 10)
+        .attr("dy", 15)
+       
+    
+    
+});
+
+</script>
+</body>
+</html>
